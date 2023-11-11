@@ -12,9 +12,10 @@ const settings = {
   ],
 };
 
-// array of students
 let students = [];
+let searchCriteria = "";
 
+const searchContainer = document.querySelector("div.search-container");
 const gallery = document.querySelector("#gallery");
 
 /**
@@ -36,7 +37,9 @@ function fetchData(url) {
     });
 }
 
-// downloads students data and assigns the result to global variable "students"
+/**
+ * Downloads students data and assigns the result to global variable "students"
+ */
 async function getStudents() {
   const fields = settings.includedFields.join(",");
   const url =
@@ -44,12 +47,72 @@ async function getStudents() {
   students = (await fetchData(url)).results;
 }
 
-// creates students gallery HTML
+/**
+ * create searchform HTML
+ */
+function createSearchForm() {
+  const searchFotmHtml = ` 
+    <form action="#" method="get">
+      <input type="search" id="search-input" class="search-input" placeholder="Search...">
+      <input type="submit" value="&#x1F50D;" id="search-submit" class="search-submit">
+    </form>`;
+  searchContainer.insertAdjacentHTML("beforeend", searchFotmHtml);
+
+  const submitButton = searchContainer.querySelector("#search-submit");
+
+  submitButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    const searchInput = searchContainer.querySelector("input.search-input");
+    searchCriteria = searchInput.value;
+    searchInput.value = "";
+    showStudentsByName();
+  });
+}
+
+/**
+ * Returns an array of students whose name contains the lowercase value of the name parameter
+ * @param {string} name - filter value
+ * @returns
+ */
+function filterStudentsByName(name) {
+  if (name.trim() === "") {
+    return students;
+  }
+  return students.filter((student) => {
+    const studentName = (
+      student.name.first +
+      " " +
+      student.name.last
+    ).toLowerCase();
+    return studentName.includes(name.toLowerCase());
+  });
+}
+
+/**
+ * Filter gallery cards by search criteria
+ */
+function showStudentsByName() {
+  gallery.querySelectorAll("div.card").forEach((card) => {
+    const studentName = card.querySelector("h3.card-name").textContent;
+    card.style.display = "";
+    if (
+      searchCriteria.trim() &&
+      !studentName.toLowerCase().includes(searchCriteria.toLowerCase())
+    ) {
+      card.style.display = "none";
+    }
+  });
+}
+
+/**
+ * creates students gallery HTML
+ */
 async function createStudentGallery() {
   try {
     await getStudents();
     students.forEach((student) => {
-      const studentCard = `<div class="card">
+      const studentCard = `
+      <div class="card">
         <div class="card-img-container">
             <img class="card-img" src="${student.picture.medium}" alt="profile picture">
         </div>
@@ -69,7 +132,11 @@ async function createStudentGallery() {
   }
 }
 
-// Converts the date value in JavaScript date string format to m/d/yyyy format
+/**
+ * Converts the date value in JavaScript date string format to m/d/yyyy format
+ * @param {string} jsDateString  date in JavaScript format
+ * @returns {string} date value in m/d/yyyy format
+ */
 function formatDate(jsDateString) {
   const dateValue = new Date(jsDateString);
   return `${
@@ -77,7 +144,11 @@ function formatDate(jsDateString) {
   }/${dateValue.getDate()}/${dateValue.getFullYear()}`;
 }
 
-// compile student data for modal panel
+/**
+ * compile student data for modal panel
+ * @param {object} student
+ * @returns {object}
+ */
 function getModalData(student) {
   const address =
     student.location.street.number +
@@ -99,7 +170,10 @@ function getModalData(student) {
   return { address, birthday, city, name, email, phone, picture };
 }
 
-// create event listeners for modal buttons
+/**
+ * create event listeners for modal buttons
+ * @param {Element} modalContainer
+ */
 function createModalEventListeners(modalContainer) {
   const modalCloseButton = document.querySelector("#modal-close-btn");
   modalCloseButton.addEventListener("click", () => {
@@ -125,7 +199,11 @@ function createModalEventListeners(modalContainer) {
   });
 }
 
-// creates initial modal HTML
+/**
+ * Creates initial modal HTML
+ * @param {object} student Student object
+ * @returns {Element} Modal container HTML element
+ */
 function createModalHtml(student) {
   const modalData = getModalData(student);
   const modalHtml = `
@@ -156,7 +234,11 @@ function createModalHtml(student) {
   return modalContainer;
 }
 
-// updates existing modal with another student data
+/**
+ * Updates existing modal with another student data
+ * @param {object} student Student object
+ * @param {Element} container Modal container HTML element
+ */
 function updateModalData(student, container) {
   const modalData = getModalData(student);
   container.querySelector("img.modal-img").src = modalData.picture;
@@ -169,7 +251,10 @@ function updateModalData(student, container) {
     modalData.birthday;
 }
 
-// creates or updates modal panel
+/**
+ * Creates or updates modal panel
+ * @param {object} student Student object
+ */
 function showModal(student) {
   let modalContainer = document.querySelector("div.modal-container");
   if (!modalContainer) {
@@ -182,8 +267,13 @@ function showModal(student) {
   }
 }
 
-// get next student by given student
+/**
+ * Get next student by given student
+ * @param {object} student Student object
+ * @returns {object} Student object at next index
+ */
 function getNextStudent(student) {
+  const students = filterStudentsByName(searchCriteria);
   const studentIndex = students.findIndex(
     (item) => item.email === student.email
   );
@@ -192,8 +282,13 @@ function getNextStudent(student) {
     : students.at(0);
 }
 
-// get previous student by given student
+/**
+ * Get previous student by given student
+ * @param {object} student Student object
+ * @returns {object} Student at previous index
+ */
 function getPrevStudent(student) {
+  const students = filterStudentsByName(searchCriteria);
   const studentIndex = students.findIndex(
     (item) => item.email === student.email
   );
@@ -202,7 +297,11 @@ function getPrevStudent(student) {
     : students.at(students.length - 1);
 }
 
-// get student by name from global students array
+/**
+ * Get one student by name from global students array
+ * @param {string} studentName
+ * @returns
+ */
 function getStudentByName(studentName) {
   return students.filter(
     (student) => student.name.first + " " + student.name.last === studentName
@@ -220,4 +319,5 @@ gallery.addEventListener("click", (event) => {
   }
 });
 
+createSearchForm();
 createStudentGallery();
