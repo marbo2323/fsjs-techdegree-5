@@ -157,7 +157,7 @@ function getModalData(student) {
     ", " +
     student.location.city +
     ", " +
-    student.location.country +
+    student.location.state +
     " " +
     student.location.postcode;
 
